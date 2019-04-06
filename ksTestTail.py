@@ -11,41 +11,6 @@ import cftime
 import sys
 from scipy.stats import ks_2samp as ksTest
 
-def getCal(fileName):
-    temp = xy.open_dataset(fileName,decode_times=False)
-    return temp.time.calendar
-
-def addSeasonArray(y):
-    return xy.DataArray([GroupbySeason(y,x) for x in np.arange(len(y.time))],name='season',dims=['time'])
-
-def GroupbySeason(df, ind):
-    month = int(str(df['time'].isel(time=ind).coords).split('-')[1])
-    if month in [12,1,2]:
-        return 'DJF'
-    elif month in [3,4,5]:
-        return 'MAM'
-    elif month in [6,7,8]:
-        return 'JJA'
-    elif month in [9,10,11]:
-        return 'SON'
-
-def startslice(startYear,fileName):
-    sm = 1
-    if getCal(fileName) == '360_day':
-        startslice = cftime.Datetime360Day(startYear, sm, 1,0,0,0,0,-1,1)
-    else:
-        startslice = str(startYear)+str(sm).zfill(2)+'01'
-
-    return startslice
-
-def endslice(endYear,fileName):
-    if getCal(fileName) == '360_day':
-        endslice = cftime.Datetime360Day(endYear, 12, 30,23,0,0,0,-1,360)
-    else:
-        endslice = str(endYear)+'1231'
-
-    return endslice
-
 def wetDayPercentile(y,q=85):
     #note hard-coded wet-day threshold of >0.1mm/d
     return y.where(y>0.1).reduce(np.nanpercentile,dim='time',q=q)
@@ -89,13 +54,6 @@ if __name__ == "__main__":
 
     pHist = xy.open_dataset(cur)
     pFuture = xy.open_dataset(fut)
-
-    if getCal(cur) == '360_day':
-        grouperString = 'season'
-        pHist.coords['season'] = addSeasonArray(pHist)
-        pFuture.coords['season'] = addSeasonArray(pFuture)
-    else:
-        grouperString = 'time.season'
 
     pThreshOne = pThreshOne.isel(lat=0,lon=0) #in theory should not be necessary if input file is for just one point
 
